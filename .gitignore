@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+.env
+.python-version
+
+# Tooling
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.cache/
+
+# Data lake (keep sample/)
+data/bronze/
+data/silver/
+data/gold/
+data/warehouse.duckdb
+data/warehouse.duckdb.wal
+data/artifacts/
+!data/sample/
+!data/sample/**
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Docker
+*.log

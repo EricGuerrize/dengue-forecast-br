@@ -1,0 +1,11 @@
+services:
+  dengue-forecast:
+    build: .
+    image: dengue-forecast-br:local
+    environment:
+      DFC_DATA_DIR: /app/data
+      PORT: "8501"
+    volumes:
+      - ./data:/app/data
+    # Fase 1: roda demo e encerra. Fase 4: Streamlit em 0.0.0.0:$PORT.
+    command: ["dfc", "demo", "--sample-dir", "data/sample", "--output-dir", "data/artifacts"]

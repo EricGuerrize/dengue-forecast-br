@@ -1,0 +1,32 @@
+[
+  {
+    "codigo_ibge": 5103403,
+    "nome": "Cuiabá",
+    "uf": "MT",
+    "populacao_2022": 650912
+  },
+  {
+    "codigo_ibge": 5108402,
+    "nome": "Várzea Grande",
+    "uf": "MT",
+    "populacao_2022": 300078
+  },
+  {
+    "codigo_ibge": 5107602,
+    "nome": "Rondonópolis",
+    "uf": "MT",
+    "populacao_2022": 244911
+  },
+  {
+    "codigo_ibge": 5107909,
+    "nome": "Sinop",
+    "uf": "MT",
+    "populacao_2022": 196312
+  },
+  {
+    "codigo_ibge": 5101803,
+    "nome": "Barra do Garças",
+    "uf": "MT",
+    "populacao_2022": 122050
+  }
+]
