@@ -22,3 +22,11 @@ def test_ingest_help() -> None:
     assert "inmet" in result.stdout
     assert "ibge" in result.stdout
     assert "sinan" in result.stdout
+    assert "sivep" in result.stdout
+
+
+def test_refresh_help() -> None:
+    result = runner.invoke(app, ["refresh", "--help"])
+    assert result.exit_code == 0
+    assert "backfill" in result.stdout
+    assert "serve" in result.stdout

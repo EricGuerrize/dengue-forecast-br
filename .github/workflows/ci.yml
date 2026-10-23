@@ -23,8 +23,8 @@ jobs:
         run: pip install -e ".[dev]"
       - name: Ruff
         run: |
-          ruff check src tests
-          ruff format --check src tests
+          ruff check src tests scripts/export_web.py
+          ruff format --check src tests scripts/export_web.py
 
   test:
     runs-on: ubuntu-latest
@@ -35,7 +35,7 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[dev,transform,forecast]"
       - name: Pytest
         run: pytest tests -m "not integration" --cov=dengue_forecast --cov-report=term-missing
 

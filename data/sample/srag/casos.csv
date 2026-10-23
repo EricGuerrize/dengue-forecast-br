@@ -1,0 +1,9 @@
+geocode,municipio_nome,week_start,virus,casos,uf,fonte
+5103403,Cuiabá,2024-12-15,covid,4,MT,sample
+5103403,Cuiabá,2024-12-15,influenza,1,MT,sample
+5103403,Cuiabá,2024-12-15,vsr,2,MT,sample
+5103403,Cuiabá,2024-12-22,covid,6,MT,sample
+5108402,Várzea Grande,2024-12-22,covid,3,MT,sample
+5107909,Sinop,2024-12-22,influenza,2,MT,sample
+5107602,Rondonópolis,2024-12-22,vsr,1,MT,sample
+5101803,Barra do Garças,2024-12-22,covid,1,MT,sample

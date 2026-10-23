@@ -118,6 +118,7 @@ def ingest_infodengue(
 
     wrote = 0
     skipped = 0
+    failed = 0
     rows_total = 0
 
     try:
@@ -130,7 +131,14 @@ def ingest_infodengue(
                 df = load_from_sample_csv(csv_path, geocode, uf)
             else:
                 assert client is not None
-                raw = fetch_municipality(client, geocode, start_year=start_year, end_year=end_year)
+                try:
+                    raw = fetch_municipality(
+                        client, geocode, start_year=start_year, end_year=end_year
+                    )
+                except Exception as exc:  # noqa: BLE001 — um município fora do ar não derruba o estado
+                    log.warning("infodengue_failed", geocode=geocode, error=str(exc))
+                    failed += 1
+                    continue
                 if raw.empty:
                     log.warning("infodengue_empty", geocode=geocode)
                     continue
@@ -158,16 +166,24 @@ def ingest_infodengue(
             else:
                 skipped += 1
 
-        warehouse.register_parquet_view(
-            "bronze_infodengue",
-            settings.bronze / "infodengue" / "**" / "data.parquet",
-        )
+        parquet_root = settings.bronze / "infodengue"
+        if any(parquet_root.glob("**/data.parquet")):
+            warehouse.register_parquet_view(
+                "bronze_infodengue",
+                parquet_root / "**" / "data.parquet",
+            )
     finally:
         if owns_client and client is not None:
             client.close()
         if owns_wh:
             warehouse.close()
 
-    summary = {"wrote": wrote, "skipped": skipped, "rows": rows_total, "geocodes": len(codes)}
+    summary = {
+        "wrote": wrote,
+        "skipped": skipped,
+        "failed": failed,
+        "rows": rows_total,
+        "geocodes": len(codes),
+    }
     log.info("infodengue_done", **summary)
     return summary

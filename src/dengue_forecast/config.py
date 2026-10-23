@@ -51,6 +51,10 @@ class Settings(BaseSettings):
         return self.data / "artifacts"
 
     @property
+    def forecast(self) -> Path:
+        return self.data / "forecast"
+
+    @property
     def warehouse(self) -> Path:
         return self.warehouse_path or (self.data / "warehouse.duckdb")
 

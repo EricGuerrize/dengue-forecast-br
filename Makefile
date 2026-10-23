@@ -1,15 +1,15 @@
-.PHONY: setup lint test ingest demo clean docker-build docker-up
+.PHONY: setup lint test ingest demo transform forecast nowcast refresh viz export-web clean docker-build docker-up
 
 PYTHON ?= python3
 PIP ?= $(PYTHON) -m pip
 
 setup:
-	$(PIP) install -e ".[dev]"
+	$(PIP) install -e ".[dev,transform,forecast,viz,orchestrate]"
 	pre-commit install || true
 
 lint:
-	ruff check src tests
-	ruff format --check src tests
+	ruff check src tests scripts/export_web.py
+	ruff format --check src tests scripts/export_web.py
 
 fmt:
 	ruff check --fix src tests
@@ -27,8 +27,26 @@ ingest:
 demo:
 	dfc demo --sample-dir data/sample --output-dir data/artifacts
 
+transform:
+	dfc transform
+
+forecast:
+	dfc forecast
+
+nowcast:
+	dfc nowcast --sample-dir data/sample
+
+refresh:
+	dfc refresh --sample-dir data/sample
+
+viz:
+	dfc viz
+
+export-web:
+	$(PYTHON) scripts/export_web.py
+
 clean:
-	rm -rf data/bronze data/silver data/gold data/warehouse.duckdb data/artifacts
+	rm -rf data/bronze data/silver data/gold data/warehouse.duckdb data/artifacts data/forecast
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 
 docker-build:

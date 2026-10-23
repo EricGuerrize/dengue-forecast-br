@@ -22,6 +22,28 @@ def test_ingest_ibge_sample(tmp_settings, sample_dir) -> None:
     assert summary["populacao_rows"] >= 5
 
 
+def test_infodengue_segue_quando_um_municipio_falha(tmp_settings) -> None:
+    class _Client:
+        def get_text(self, *_args, **_kwargs) -> str:
+            raise RuntimeError("timeout")
+
+        def close(self) -> None:
+            return None
+
+    with Warehouse(tmp_settings.warehouse) as wh:
+        summary = ingest_infodengue(
+            uf="MT",
+            start_year=2024,
+            end_year=2024,
+            geocodes=[5103403],
+            settings=tmp_settings,
+            warehouse=wh,
+            client=_Client(),
+        )
+    assert summary["failed"] == 1
+    assert summary["rows"] == 0
+
+
 def test_ingest_infodengue_sample(tmp_settings, sample_dir) -> None:
     with Warehouse(tmp_settings.warehouse) as wh:
         summary = ingest_infodengue(

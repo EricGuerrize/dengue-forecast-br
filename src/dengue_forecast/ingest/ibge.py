@@ -21,6 +21,12 @@ from dengue_forecast.warehouse import Warehouse
 log = get_logger(__name__)
 
 IBGE_MUNICIPIOS_UF = "https://servicodados.ibge.gov.br/api/v1/localidades/estados/{uf}/municipios"
+# Censo 2022, variável 93 (população residente), municípios da UF.
+IBGE_POPULACAO_URL = (
+    "https://servicodados.ibge.gov.br/api/v3/agregados/4714/periodos/2022/"
+    "variaveis/93?localidades=N6[N3[{code}]]"
+)
+_UF_IBGE = {"MT": 51}
 
 
 def _municipios_from_api(client: HttpClient, uf: str) -> pd.DataFrame:
@@ -34,6 +40,52 @@ def _municipios_fallback(uf: str) -> pd.DataFrame:
     if uf != "MT":
         raise ValueError(f"Fallback estático só para MT (pedido: {uf})")
     return pd.DataFrame(mt_municipios_records())
+
+
+def parse_ibge_populacao(payload: object, *, uf: str) -> pd.DataFrame:
+    """Converte o JSON do agregado 4714 em linhas de população municipal."""
+    if not isinstance(payload, list) or not payload:
+        raise ValueError("Resposta IBGE de população vazia ou inesperada")
+    resultados = payload[0].get("resultados") if isinstance(payload[0], dict) else None
+    if not resultados:
+        raise ValueError("Agregado IBGE sem resultados")
+    series = resultados[0].get("series") or []
+    suffix = f" - {uf}"
+    rows: list[dict[str, str | int]] = []
+    for item in series:
+        localidade = item["localidade"]
+        nome = str(localidade["nome"])
+        if nome.endswith(suffix):
+            nome = nome[: -len(suffix)]
+        valor = item["serie"]["2022"]
+        rows.append(
+            {
+                "codigo_ibge": int(localidade["id"]),
+                "nome": nome,
+                "uf": uf,
+                "populacao_2022": int(valor),
+            }
+        )
+    if not rows:
+        raise ValueError("Agregado IBGE sem municípios")
+    return pd.DataFrame(rows)
+
+
+def _populacao_from_api(client: HttpClient, uf: str) -> pd.DataFrame:
+    code = _UF_IBGE.get(uf)
+    if code is None:
+        raise ValueError(f"População IBGE ainda não mapeada para a UF {uf}")
+    payload = client.get_json(IBGE_POPULACAO_URL.format(code=code))
+    return parse_ibge_populacao(payload, uf=uf)
+
+
+def _populacao_from_reference(settings: Settings, uf: str) -> pd.DataFrame:
+    if uf != "MT":
+        raise ValueError(f"Referência de população só cobre MT (pedido: {uf})")
+    path = settings.root / "data" / "reference" / "populacao_mt_2022.csv"
+    if not path.exists():
+        raise FileNotFoundError(f"Referência de população ausente: {path}")
+    return pd.read_csv(path)
 
 
 def _populacao_from_sample(sample_dir: Path) -> pd.DataFrame:
@@ -60,7 +112,7 @@ def ingest_ibge(
     warehouse: Warehouse | None = None,
     sample_dir: Path | None = None,
 ) -> dict[str, int]:
-    """Ingere municípios (+ população sample/subset) para a UF."""
+    """Ingere municípios e população (Censo 2022) para a UF."""
     settings = settings or get_settings()
     uf = uf.upper()
     owns_wh = warehouse is None
@@ -83,9 +135,11 @@ def ingest_ibge(
             except Exception as exc:  # noqa: BLE001
                 log.warning("ibge_api_failed_using_fallback", error=str(exc))
                 municipios = _municipios_fallback(uf)
-            # População completa via API de agregados é frágil; fase 1 grava subset sample
-            # e documenta expansão na fase 2.
-            populacao = _populacao_from_sample(settings.sample)
+            try:
+                populacao = _populacao_from_api(client, uf)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("ibge_populacao_api_failed_using_reference", error=str(exc))
+                populacao = _populacao_from_reference(settings, uf)
 
         municipios = validate_ibge_municipios(municipios)
         populacao = validate_ibge_populacao(populacao)

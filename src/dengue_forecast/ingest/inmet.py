@@ -9,6 +9,7 @@ Archive nas coordenadas da estação — ver README / data/sample/ATTRIBUTION.md
 from __future__ import annotations
 
 import io
+import unicodedata
 import zipfile
 from pathlib import Path
 
@@ -26,7 +27,7 @@ log = get_logger(__name__)
 INMET_ZIP_URL = "https://portal.inmet.gov.br/uploads/dadoshistoricos/{year}.zip"
 
 # Estações automáticas conhecidas em MT (código BDMEP / API Tempo)
-MT_STATIONS: dict[str, dict[str, float | str]] = {
+MT_STATIONS: dict[str, dict[str, float | str | None]] = {
     "A901": {
         "name": "CUIABA",
         "latitude": -15.789444,
@@ -34,16 +35,16 @@ MT_STATIONS: dict[str, dict[str, float | str]] = {
         "altitude_m": 185.0,
     },
     "A902": {
-        "name": "CACERES",
-        "latitude": -16.050278,
-        "longitude": -57.635556,
-        "altitude_m": 130.0,
+        "name": "TANGARA DA SERRA",
+        "latitude": None,
+        "longitude": None,
+        "altitude_m": None,
     },
     "A904": {
-        "name": "RONDONOPOLIS",
-        "latitude": -16.45,
-        "longitude": -54.616667,
-        "altitude_m": 290.0,
+        "name": "SORRISO",
+        "latitude": None,
+        "longitude": None,
+        "altitude_m": None,
     },
     "A917": {
         "name": "SINOP",
@@ -54,14 +55,81 @@ MT_STATIONS: dict[str, dict[str, float | str]] = {
 }
 
 
+def _fold(text: str) -> str:
+    decomposed = unicodedata.normalize("NFKD", text)
+    stripped = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+    return stripped.lower().strip()
+
+
+def _to_float(value: str) -> float:
+    return float(str(value).strip().replace(",", "."))
+
+
+def _preamble(lines: list[str]) -> dict[str, float | str]:
+    """Nome e coordenada nas linhas de metadado, antes da tabela horária."""
+    found: dict[str, float | str] = {}
+    for line in lines[:30]:
+        if ";" not in line:
+            continue
+        key, _, value = line.partition(";")
+        folded = _fold(key)
+        cleaned = value.strip()
+        if not cleaned:
+            continue
+        if folded.startswith("latitude"):
+            found["latitude"] = _to_float(cleaned)
+        elif folded.startswith("longitude"):
+            found["longitude"] = _to_float(cleaned)
+        elif folded.startswith("estacao"):
+            found["name"] = cleaned
+    return found
+
+
+def _pick(
+    columns: dict[str, str],
+    *candidates: str,
+    exclude: tuple[str, ...] = (),
+) -> str | None:
+    for candidate in candidates:
+        for key, original in columns.items():
+            if candidate in key and not any(blocked in key for blocked in exclude):
+                return original
+    return None
+
+
+def _numeric(raw: pd.DataFrame, column: str | None) -> pd.Series:
+    if column is None:
+        return pd.Series(float("nan"), index=raw.index, dtype="float64")
+    return pd.to_numeric(raw[column], errors="coerce").astype("float64")
+
+
+def _dates(raw: pd.DataFrame, column: str | None) -> pd.Series:
+    if column is None:
+        return pd.Series(pd.NaT, index=raw.index, dtype="datetime64[ns]")
+    text = raw[column].astype("string").str.strip()
+    iso = text.str.match(r"^\d{4}[-/]\d{2}[-/]\d{2}", na=False)
+    parsed = pd.Series(pd.NaT, index=raw.index, dtype="datetime64[ns]")
+    if bool(iso.any()):
+        normalized = text.loc[iso].str.replace("/", "-", regex=False)
+        parsed.loc[iso] = pd.to_datetime(normalized, format="%Y-%m-%d", errors="coerce")
+    rest = ~iso & text.notna()
+    if bool(rest.any()):
+        parsed.loc[rest] = pd.to_datetime(text.loc[rest], dayfirst=True, errors="coerce")
+    return parsed
+
+
 def _parse_bdmep_csv(text: str, station_id: str, uf: str) -> pd.DataFrame:
-    """Parseia CSV diário BDMEP (separador `;`, cabeçalho variável)."""
-    # BDMEP costuma ter metadados nas primeiras linhas; tentamos achar o header
+    """CSV horário do BDMEP vira uma linha por dia.
+
+    O arquivo traz metadado nas primeiras linhas e uma observação por hora.
+    Chuva do dia é a soma. Temperatura e umidade são a média. Máxima e mínima
+    do dia saem das colunas horárias de máxima e mínima.
+    """
     lines = text.splitlines()
     header_idx = 0
-    for i, line in enumerate(lines[:20]):
-        low = line.lower()
-        if "data" in low and ("precipita" in low or "temp" in low):
+    for i, line in enumerate(lines[:40]):
+        folded = _fold(line)
+        if "data" in folded and ("precipita" in folded or "temp" in folded):
             header_idx = i
             break
     raw = pd.read_csv(
@@ -71,43 +139,47 @@ def _parse_bdmep_csv(text: str, station_id: str, uf: str) -> pd.DataFrame:
         encoding="latin-1",
         engine="python",
     )
-    cols = {c.lower().strip(): c for c in raw.columns}
+    columns = {_fold(str(column)): column for column in raw.columns}
+    date_col = _pick(columns, "data (yyyy-mm-dd)", "data")
+    precip_col = _pick(columns, "precipita")
+    tmean_col = _pick(columns, "bulbo seco", "temperatura media", "temp. med", "temp_med")
+    tmax_col = _pick(columns, "temperatura maxima", "temp. max", exclude=("orvalho",))
+    tmin_col = _pick(columns, "temperatura minima", "temp. min", exclude=("orvalho",))
+    humid_col = _pick(columns, "umidade relativa do ar, horaria", "umidade relativa do ar")
 
-    def pick(*candidates: str) -> str | None:
-        for cand in candidates:
-            for key, orig in cols.items():
-                if cand in key:
-                    return orig
-        return None
-
-    date_col = pick("data")
-    precip_col = pick("precipita")
-    tmean_col = pick("temp. med", "temperatura media", "temp_med")
-    tmax_col = pick("temp. max", "temperatura maxima")
-    tmin_col = pick("temp. min", "temperatura minima")
-    humid_col = pick("umidade")
-
-    meta = MT_STATIONS.get(station_id, {})
-    out = pd.DataFrame(
+    file_meta = _preamble(lines[:header_idx])
+    fallback = MT_STATIONS.get(station_id, {})
+    hourly = pd.DataFrame(
         {
             "station_id": station_id,
-            "station_name": meta.get("name", station_id),
+            "station_name": file_meta.get("name", fallback.get("name", station_id)),
             "uf": uf,
-            "latitude": meta.get("latitude"),
-            "longitude": meta.get("longitude"),
-            "date": pd.to_datetime(raw[date_col], dayfirst=True, errors="coerce")
-            if date_col
-            else pd.NaT,
-            "precip_mm": pd.to_numeric(raw[precip_col], errors="coerce") if precip_col else pd.NA,
-            "temp_mean_c": pd.to_numeric(raw[tmean_col], errors="coerce") if tmean_col else pd.NA,
-            "temp_max_c": pd.to_numeric(raw[tmax_col], errors="coerce") if tmax_col else pd.NA,
-            "temp_min_c": pd.to_numeric(raw[tmin_col], errors="coerce") if tmin_col else pd.NA,
-            "humidity_mean_pct": pd.to_numeric(raw[humid_col], errors="coerce")
-            if humid_col
-            else pd.NA,
+            "latitude": file_meta.get("latitude", fallback.get("latitude")),
+            "longitude": file_meta.get("longitude", fallback.get("longitude")),
+            "date": _dates(raw, date_col).dt.normalize(),
+            "precip_mm": _numeric(raw, precip_col),
+            "temp_mean_c": _numeric(raw, tmean_col),
+            "temp_max_c": _numeric(raw, tmax_col),
+            "temp_min_c": _numeric(raw, tmin_col),
+            "humidity_mean_pct": _numeric(raw, humid_col),
         }
     )
-    return out.dropna(subset=["date"]).reset_index(drop=True)
+    hourly = hourly.dropna(subset=["date"])
+    if hourly.empty:
+        return hourly.reset_index(drop=True)
+
+    daily = hourly.groupby(
+        ["station_id", "station_name", "uf", "latitude", "longitude", "date"],
+        as_index=False,
+        dropna=False,
+    ).agg(
+        precip_mm=("precip_mm", lambda series: series.sum(min_count=1)),
+        temp_mean_c=("temp_mean_c", "mean"),
+        temp_max_c=("temp_max_c", "max"),
+        temp_min_c=("temp_min_c", "min"),
+        humidity_mean_pct=("humidity_mean_pct", "mean"),
+    )
+    return daily.sort_values("date").reset_index(drop=True)
 
 
 def load_sample_station(path: Path) -> pd.DataFrame:

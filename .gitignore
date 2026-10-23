@@ -20,6 +20,11 @@ htmlcov/
 .tox/
 .cache/
 
+# dbt
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+
 # Data lake (keep sample/)
 data/bronze/
 data/silver/
@@ -27,6 +32,7 @@ data/gold/
 data/warehouse.duckdb
 data/warehouse.duckdb.wal
 data/artifacts/
+data/forecast/
 !data/sample/
 !data/sample/**
 

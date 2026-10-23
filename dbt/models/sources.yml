@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: bronze
+    schema: main
+    description: Views parquet registradas pela ingestão (`dfc ingest`).
+    tables:
+      - name: bronze_infodengue
+      - name: bronze_inmet
+      - name: bronze_ibge_municipios
+      - name: bronze_ibge_populacao
