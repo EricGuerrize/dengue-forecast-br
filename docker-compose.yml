@@ -1,0 +1,11 @@
+services:
+  dengue-forecast:
+    build: .
+    image: dengue-forecast-br:local
+    ports:
+      - "8501:8501"
+    environment:
+      DFC_DATA_DIR: /app/data
+      PORT: "8501"
+    volumes:
+      - ./data:/app/data

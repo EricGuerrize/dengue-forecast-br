@@ -1,0 +1,13 @@
+.venv
+.git
+.pytest_cache
+.ruff_cache
+.mypy_cache
+dbt/target
+dbt/logs
+data/bronze
+data/forecast
+data/artifacts
+data/warehouse.duckdb
+data/warehouse.duckdb.wal
+**/__pycache__

@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#102f37" />
+    <meta
+      name="description"
+      content="Painel de casos e projeções semanais de dengue em Mato Grosso."
+    />
+    <title>Dengue MT | Casos e previsões</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="/" aria-label="Dengue MT, início">
+          <span class="brand-mark" aria-hidden="true">✳</span>
+          <span
+            ><strong>Dengue MT</strong><small>Vigilância em dados</small></span
+          >
+        </a>
+        <div class="side-section">
+          <p class="side-kicker">EXPLORAR</p>
+          <a class="side-link active" href="#visao-geral"
+            >◉ <span>Visão geral</span></a
+          >
+          <a class="side-link" href="#municipios">▦ <span>Municípios</span></a>
+          <a class="side-link" href="#metodo"
+            >◇ <span>Método e limites</span></a
+          >
+        </div>
+        <div class="sidebar-note">
+          <span class="small-dot"></span>
+          <p>
+            Dados agregados por município e semana. Projeções de apoio à
+            análise.
+          </p>
+        </div>
+      </aside>
+
+      <main id="visao-geral" class="main-content">
+        <header class="topbar">
+          <div class="breadcrumb">MATO GROSSO <span>/</span> DENGUE</div>
+          <div id="last-updated" class="update-pill">Carregando dados…</div>
+        </header>
+
+        <section class="hero">
+          <div>
+            <p class="eyebrow">SÉRIE SEMANAL</p>
+            <h1>Dengue em<br /><em>Mato Grosso</em></h1>
+            <p class="hero-copy">
+              Casos notificados e previsões para 4 e 8 semanas. Selecione um
+              município para ver a série e o erro dos modelos.
+            </p>
+          </div>
+        </section>
+
+        <div id="freshness" class="notice" role="status" hidden></div>
+        <div id="error" class="notice error" role="alert" hidden></div>
+
+        <section class="toolbar" aria-label="Filtros do painel">
+          <label class="field city-field"
+            >Município
+            <select id="city-select" aria-label="Selecione um município">
+              <option>Carregando…</option>
+            </select>
+          </label>
+          <div class="field">
+            Previsão para
+            <div class="segmented" role="group" aria-label="Previsão para">
+              <button
+                type="button"
+                class="active"
+                data-horizon="4"
+                aria-pressed="true"
+              >
+                4 semanas
+              </button>
+              <button type="button" data-horizon="8" aria-pressed="false">
+                8 semanas
+              </button>
+            </div>
+          </div>
+          <div class="field">
+            Histórico no gráfico
+            <div
+              class="segmented"
+              role="group"
+              aria-label="Histórico no gráfico"
+            >
+              <button type="button" data-period="26" aria-pressed="false">
+                6 meses
+              </button>
+              <button
+                type="button"
+                class="active"
+                data-period="52"
+                aria-pressed="true"
+              >
+                1 ano
+              </button>
+              <button type="button" data-period="104" aria-pressed="false">
+                2 anos
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-heading">
+          <div>
+            <p class="eyebrow">MUNICÍPIO</p>
+            <h2 id="city-title">Município</h2>
+          </div>
+          <p id="target-date" class="muted"></p>
+        </section>
+
+        <section class="metrics" aria-label="Indicadores principais">
+          <article class="metric-card">
+            <span>Casos na última semana</span><strong id="observed">—</strong
+            ><small id="observed-date">Notificações registradas</small>
+          </article>
+          <article class="metric-card">
+            <span>Estimativa corrigida</span><strong id="nowcast">—</strong
+            ><small>Ajuste por notificações em atraso</small>
+          </article>
+          <article class="metric-card emphasis">
+            <span>Casos previstos</span><strong id="prediction">—</strong
+            ><small id="prediction-period"
+              >Previsão principal · 4 semanas</small
+            >
+          </article>
+          <article class="metric-card">
+            <span>Faixa de alerta</span
+            ><strong id="alert-badge" class="alert-badge">—</strong
+            ><small>Comparação com histórico local</small>
+          </article>
+        </section>
+
+        <section class="content-grid">
+          <article class="panel chart-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">SÉRIE</p>
+                <h3>Casos por semana</h3>
+              </div>
+              <span class="panel-tag">casos</span>
+            </div>
+            <div
+              id="chart"
+              class="chart"
+              role="img"
+              aria-label="Gráfico de casos observados e previsão"
+            ></div>
+            <div class="legend">
+              <span><i class="legend-line observed"></i> Casos registrados</span
+              ><span><i class="legend-line forecast"></i> Previsão</span
+              ><span
+                ><i class="legend-line boundary"></i> Última observação</span
+              >
+            </div>
+            <p class="panel-footnote">
+              O ponto vermelho mostra a previsão para a semana indicada. Os
+              casos já registrados podem ser revisados pela fonte.
+            </p>
+          </article>
+          <article class="panel insight-panel">
+            <p class="eyebrow">FAIXA DE ALERTA</p>
+            <h3>Comparação com o histórico local</h3>
+            <p id="insight-copy">
+              Selecione um município para ver o contexto da previsão.
+            </p>
+            <div class="thresholds">
+              <div>
+                <span>Mediana histórica</span><strong id="p50">—</strong>
+              </div>
+              <div><span>Percentil 90</span><strong id="p90">—</strong></div>
+              <div>
+                <span>Incidência prevista</span
+                ><strong id="incidence">—</strong>
+              </div>
+            </div>
+            <p class="subtle">
+              Valores em casos por 100 mil habitantes. As faixas não são os
+              níveis oficiais da SES.
+            </p>
+          </article>
+        </section>
+
+        <section id="municipios" class="panel city-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">MATO GROSSO</p>
+              <h3>Municípios com dados completos</h3>
+            </div>
+            <label class="search-label"
+              >Buscar município<input
+                id="city-search"
+                type="search"
+                placeholder="Digite um nome…"
+                autocomplete="off"
+            /></label>
+          </div>
+          <div id="state-summary" class="state-summary"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Município</th>
+                  <th>Faixa</th>
+                  <th>Casos previstos</th>
+                  <th>Incidência / 100 mil</th>
+                  <th>Semana prevista</th>
+                </tr>
+              </thead>
+              <tbody id="city-rows"></tbody>
+            </table>
+          </div>
+          <p class="panel-footnote">
+            Toque em um município para ver a série. Em telas pequenas, deslize a
+            tabela para ver as demais colunas.
+          </p>
+        </section>
+
+        <section id="metodo" class="method-grid">
+          <article class="panel">
+            <p class="eyebrow">QUALIDADE DA PREVISÃO</p>
+            <h3>Erro em dados anteriores</h3>
+            <div id="quality-table"></div>
+            <p class="panel-footnote">
+              O erro mostra, em média, quantos casos separaram a previsão do
+              número registrado. Quanto menor, melhor. Cada método pode ter sido
+              avaliado em uma quantidade diferente de semanas.
+            </p>
+          </article>
+          <article class="panel">
+            <p class="eyebrow">VALIDAÇÃO DO ALERTA</p>
+            <h3>Como o alerta vermelho se saiu</h3>
+            <div id="validation"></div>
+            <p class="panel-footnote">
+              Os percentuais usam previsões feitas para semanas que já passaram.
+              Em cada uma, a comparação considerou apenas os dados conhecidos
+              naquela época.
+            </p>
+          </article>
+        </section>
+
+        <section class="panel method-note" aria-labelledby="method-title">
+          <h3 id="method-title">Entenda os números</h3>
+          <div class="method-text">
+            <p>
+              Os casos registrados vêm do InfoDengue e a população vem do IBGE.
+              A lista mostra apenas municípios com 105 semanas seguidas de casos
+              e dados suficientes para fazer e conferir as previsões de 4 e 8
+              semanas. Chuva e temperatura são usadas quando há dados de uma
+              estação do INMET próxima.
+            </p>
+            <p>
+              A previsão estima quantos casos podem ser registrados daqui a 4 ou
+              8 semanas. Para saber quanto ela costuma errar, repetimos o
+              cálculo para semanas passadas e comparamos com os casos que foram
+              registrados depois.
+            </p>
+            <p>
+              A faixa de alerta compara a previsão com as semanas anteriores do
+              mesmo município. “Mediana” é o valor que divide essas semanas ao
+              meio. “Percentil 90” é um patamar que só uma em cada dez semanas
+              ultrapassa. São comparações locais, não níveis oficiais de alerta.
+            </p>
+            <p>
+              A estimativa corrigida tenta compensar notificações que chegam
+              atrasadas. O cálculo de atraso usa dados de outro sistema de
+              saúde, o SIVEP-Gripe, e deve ser lido com cuidado. Esta página só
+              muda quando uma nova cópia dos dados é publicada. Consulte também
+              os boletins da SES e da vigilância local.
+            </p>
+          </div>
+        </section>
+
+        <footer>
+          Dados públicos de Mato Grosso
+          <span>Consulte também os boletins da SES e da vigilância local.</span>
+        </footer>
+      </main>
+    </div>
+  </body>
+</html>

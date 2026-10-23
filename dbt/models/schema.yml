@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: municipio_semana
+    description: >
+      Grão município × semana epidemiológica: casos InfoDengue, população
+      IBGE 2022 e clima da estação INMET mais próxima (até 100 km).
+    columns:
+      - name: geocode
+        tests: [not_null]
+      - name: week_start
+        tests: [not_null]
+      - name: casos
+        tests: [not_null]
+      - name: populacao_2022
+        tests: [not_null]
+  - name: infodengue
+    columns:
+      - name: geocode
+        tests: [not_null]
+      - name: week_start
+        tests: [not_null]
+  - name: populacao
+    columns:
+      - name: codigo_ibge
+        tests: [unique, not_null]
+      - name: populacao_2022
+        tests: [not_null]
+  - name: estacao_municipio
+    columns:
+      - name: codigo_ibge
+        tests: [unique, not_null]
+      - name: station_id
+        tests: [not_null]
+      - name: distance_km
+        tests: [not_null]

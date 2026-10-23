@@ -1,0 +1,8 @@
+dengue_forecast:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('DFC_WAREHOUSE_PATH') }}"
+      schema: main
+      threads: 1

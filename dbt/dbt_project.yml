@@ -1,0 +1,24 @@
+name: dengue_forecast
+version: "1.0.0"
+config-version: 2
+profile: dengue_forecast
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages", "logs"]
+
+vars:
+  # Estação só entra no gold se estiver a até 100 km do centróide.
+  # Cuiabá↔A901 fica ~21 km; Rondonópolis↔A901 fica ~170 km e fica de fora.
+  max_station_distance_km: 100
+
+models:
+  dengue_forecast:
+    silver:
+      +schema: silver
+      +materialized: table
+    gold:
+      +schema: gold
+      +materialized: table
