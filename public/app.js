@@ -24,6 +24,11 @@ const alertNames = {
   vermelho: "Acima do p90",
   sem_dado: "Sem dados",
 };
+const modelNames = {
+  lightgbm: "Modelo principal",
+  sazonal: "Mesmo período no ano anterior",
+  sarima: "Modelo estatístico",
+};
 const rank = { vermelho: 0, amarelo: 1, verde: 2, sem_dado: 3 };
 
 function text(id, value) {
@@ -112,7 +117,7 @@ function renderCity() {
   );
   text("nowcast", format(item.nowcast, true));
   text("prediction", format(prediction?.cases));
-  text("prediction-period", `Modelo LightGBM · ${state.horizon} semanas`);
+  text("prediction-period", `Previsão principal · ${state.horizon} semanas`);
   text(
     "target-date",
     prediction
@@ -137,7 +142,7 @@ function renderCity() {
     ? quality
         .map(
           (row) =>
-            `<div class="quality-row"><strong>${row.model}</strong><span>${format(row.mae, true)} casos · ${format(row.n)} previsões</span></div>`,
+            `<div class="quality-row"><strong>${modelNames[row.model] || row.model}</strong><span>${format(row.mae, true)} casos · ${format(row.n)} previsões</span></div>`,
         )
         .join("")
     : '<p class="subtle">Sem avaliação disponível.</p>';
@@ -222,7 +227,7 @@ function renderValidation() {
     (item) => item.horizon === state.horizon,
   );
   $("validation").innerHTML = result
-    ? `<div class="validation-row"><span>Precisão da faixa vermelha</span><strong>${result.precision == null ? "—" : format(result.precision * 100, true) + "%"}</strong></div><div class="validation-row"><span>Sensibilidade</span><strong>${result.recall == null ? "—" : format(result.recall * 100, true) + "%"}</strong></div><div class="validation-row"><span>Previsões avaliadas</span><strong>${format(result.n)}</strong></div>`
+    ? `<div class="validation-row"><span>Alertas vermelhos que acertaram</span><strong>${result.precision == null ? "—" : format(result.precision * 100, true) + "%"}</strong></div><div class="validation-row"><span>Semanas vermelhas antecipadas</span><strong>${result.recall == null ? "—" : format(result.recall * 100, true) + "%"}</strong></div><div class="validation-row"><span>Previsões conferidas</span><strong>${format(result.n)}</strong></div>`
     : '<p class="subtle">Validação indisponível neste recorte.</p>';
 }
 

@@ -68,12 +68,8 @@
             </select>
           </label>
           <div class="field">
-            Horizonte da projeção
-            <div
-              class="segmented"
-              role="group"
-              aria-label="Horizonte da projeção"
-            >
+            Previsão para
+            <div class="segmented" role="group" aria-label="Previsão para">
               <button
                 type="button"
                 class="active"
@@ -131,7 +127,9 @@
           </article>
           <article class="metric-card emphasis">
             <span>Casos previstos</span><strong id="prediction">—</strong
-            ><small id="prediction-period">Modelo LightGBM · 4 semanas</small>
+            ><small id="prediction-period"
+              >Previsão principal · 4 semanas</small
+            >
           </article>
           <article class="metric-card">
             <span>Faixa de alerta</span
@@ -231,51 +229,51 @@
             <h3>Erro em dados anteriores</h3>
             <div id="quality-table"></div>
             <p class="panel-footnote">
-              Erro médio absoluto: diferença média entre casos previstos e
-              observados. Menor é melhor. Os modelos podem ter quantidades
-              diferentes de previsões avaliadas.
+              O erro mostra, em média, quantos casos separaram a previsão do
+              número registrado. Quanto menor, melhor. Cada método pode ter sido
+              avaliado em uma quantidade diferente de semanas.
             </p>
           </article>
           <article class="panel">
             <p class="eyebrow">VALIDAÇÃO DO ALERTA</p>
-            <h3>Faixa vermelha no backtest</h3>
+            <h3>Como o alerta vermelho se saiu</h3>
             <div id="validation"></div>
             <p class="panel-footnote">
-              Precisão: entre alertas vermelhos previstos, quantos também
-              ficaram vermelhos no dado observado. Sensibilidade: quantos
-              vermelhos observados foram antecipados. Cortes calculados apenas
-              com o passado disponível em cada origem.
+              Os percentuais usam previsões feitas para semanas que já passaram.
+              Em cada uma, a comparação considerou apenas os dados conhecidos
+              naquela época.
             </p>
           </article>
         </section>
 
         <section class="panel method-note" aria-labelledby="method-title">
-          <h3 id="method-title">Como este painel foi feito</h3>
+          <h3 id="method-title">Entenda os números</h3>
           <div class="method-text">
             <p>
-              Os casos semanais vêm do InfoDengue. A população municipal é do
-              IBGE. Entram na lista os municípios com 105 semanas seguidas de
-              casos, população válida, previsão e erro avaliado para 4 e 8
-              semanas. Chuva e temperatura entram no modelo onde há estação do
-              INMET associada ao município.
+              Os casos registrados vêm do InfoDengue e a população vem do IBGE.
+              A lista mostra apenas municípios com 105 semanas seguidas de casos
+              e dados suficientes para fazer e conferir as previsões de 4 e 8
+              semanas. Chuva e temperatura são usadas quando há dados de uma
+              estação do INMET próxima.
             </p>
             <p>
-              O LightGBM calcula casos para 4 e 8 semanas à frente. O erro
-              mostrado acima vem de previsões feitas em datas anteriores, sempre
-              com dados disponíveis até cada data. A faixa de alerta compara a
-              incidência prevista com a mediana e o percentil 90 do próprio
-              município.
+              A previsão estima quantos casos podem ser registrados daqui a 4 ou
+              8 semanas. Para saber quanto ela costuma errar, repetimos o
+              cálculo para semanas passadas e comparamos com os casos que foram
+              registrados depois.
             </p>
             <p>
-              A estimativa corrigida considera atrasos de notificação. A
-              distribuição de atrasos usada nesta versão vem do SIVEP-Gripe; ela
-              não foi estimada com notificações de dengue. A página mostra um
-              recorte exportado dos resultados e é atualizada quando um novo
-              recorte é publicado no repositório.
+              A faixa de alerta compara a previsão com as semanas anteriores do
+              mesmo município. “Mediana” é o valor que divide essas semanas ao
+              meio. “Percentil 90” é um patamar que só uma em cada dez semanas
+              ultrapassa. São comparações locais, não níveis oficiais de alerta.
             </p>
             <p>
-              Previsões e faixas servem para análise. Para decisões de saúde,
-              consulte os boletins da SES e a vigilância local.
+              A estimativa corrigida tenta compensar notificações que chegam
+              atrasadas. O cálculo de atraso usa dados de outro sistema de
+              saúde, o SIVEP-Gripe, e deve ser lido com cuidado. Esta página só
+              muda quando uma nova cópia dos dados é publicada. Consulte também
+              os boletins da SES e da vigilância local.
             </p>
           </div>
         </section>
